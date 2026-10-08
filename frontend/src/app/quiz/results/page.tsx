@@ -15,6 +15,8 @@ export default function ResultsPage() {
   const [decisionError, setDecisionError] = useState<string | null>(null);
   const [showTrace, setShowTrace] = useState(false);
   const [studySkill, setStudySkill] = useState<string | null>(null);
+  const [mistakesOnly, setMistakesOnly] = useState(false);
+  const [reviewTopic, setReviewTopic] = useState('');
 
   useEffect(() => {
     const raw = sessionStorage.getItem('learnsmart_quiz_result');
@@ -50,6 +52,12 @@ export default function ResultsPage() {
 
   const { summary, results, recommendations, analytics } = result;
   const focus = recommendations[0];
+  const topicScores = Array.from(new Set(results.map(r => r.skill))).map(skill => {
+    const answers = results.filter(r => r.skill === skill);
+    return { skill, total: answers.length, correct: answers.filter(r => r.correct).length };
+  }).sort((a, b) => (b.total - b.correct) - (a.total - a.correct) || a.skill.localeCompare(b.skill));
+  const reviewedAnswers = results.filter(r => (!mistakesOnly || !r.correct) && (!reviewTopic || r.skill === reviewTopic))
+    .sort((a, b) => Number(a.correct) - Number(b.correct));
 
   return (
     <div className="mx-auto max-w-[48rem] px-4 py-8 sm:px-6">
@@ -127,10 +135,32 @@ export default function ResultsPage() {
         )}
 
         <section aria-labelledby="answers-h">
+          <h2 className="text-lg">Results by topic</h2>
+          <ul className="mt-3 mb-8 divide-y divide-[var(--rule-soft)] border-y border-[var(--rule-soft)]">
+            {topicScores.map(t => <li key={t.skill} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div><p className="font-medium">{t.skill}</p><p className="text-sm t-graphite">{t.correct} of {t.total} correct · {t.total - t.correct} mistakes</p></div>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <button className="link" onClick={() => { setReviewTopic(t.skill); setMistakesOnly(true); }}>Review mistakes</button>
+                <Link className="link" href={`/study/${encodeURIComponent(t.skill)}`}>Study</Link>
+                <Link className="link" href={`/quiz/adaptive?skill=${encodeURIComponent(t.skill)}`}>Practise</Link>
+              </div>
+            </li>)}
+          </ul>
           <h2 id="answers-h" className="text-lg">Your answers</h2>
           <p className="mt-1 text-sm t-graphite">Wrong answers first, each with the right answer and why.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={mistakesOnly} onChange={e => setMistakesOnly(e.target.checked)} />Mistakes only</label>
+            <label className="flex items-center gap-2">Topic
+              <select value={reviewTopic} onChange={e => setReviewTopic(e.target.value)} className="border border-[var(--rule-soft)] bg-transparent p-2">
+                <option value="">All topics</option>
+                {topicScores.map(t => <option key={t.skill} value={t.skill}>{t.skill}</option>)}
+              </select>
+            </label>
+            <span className="t-graphite" aria-live="polite">{reviewedAnswers.length} answers shown</span>
+          </div>
+          {reviewedAnswers.length === 0 && <p className="mt-4 t-pass" role="status">{mistakesOnly ? 'No mistakes in this selection.' : 'No answers in this selection.'}</p>}
           <ol className="mt-3 divide-y divide-[var(--rule-soft)] border-y border-[var(--rule-soft)]">
-            {[...results].sort((a, b) => Number(a.correct) - Number(b.correct)).map(r => (
+            {reviewedAnswers.map(r => (
               <li key={r.questionId} className="py-4">
                 <p className="text-xs t-graphite">
                   {r.skill} · <span className={r.correct ? 't-pass' : 't-mark'}>{r.correct ? 'Correct' : 'Wrong'}</span> · mastery now{' '}
@@ -158,6 +188,7 @@ export default function ResultsPage() {
                   <p className="font-medium">{rec.skill} <span className="font-normal t-graphite t-num">{rec.masteryPercent}%</span></p>
                   <p className="mt-1 text-sm">{rec.explanation}</p>
                   {rec.suggestedAction && <p className="mt-1 text-sm t-graphite">Try this: {rec.suggestedAction}</p>}
+                  <Link href={`/study/${encodeURIComponent(rec.skill)}`} className="link mt-2 inline-block text-sm">Study {rec.skill}</Link>
                 </li>
               ))}
             </ul>
