@@ -89,11 +89,19 @@ export default function StudyTopicPage() {
   const [error, setError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [busy, setBusy] = useState<Set<string>>(new Set());
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     if (!getToken()) { router.push('/login'); return; }
-    api.getStudy(skill).then(setPage).catch(err => setError(err.message));
-  }, [skill, router]);
+    let active = true;
+    setPage(null);
+    setError('');
+    setSaveError('');
+    api.getStudy(skill)
+      .then(result => { if (active) setPage(result); })
+      .catch(err => { if (active) setError(err.message); });
+    return () => { active = false; };
+  }, [skill, router, reload]);
 
   const setDone = useCallback((id: string, doneAt: string | null) => {
     setPage(p => p && ({
@@ -124,6 +132,7 @@ export default function StudyTopicPage() {
       <div className="mx-auto max-w-[52rem] px-4 py-16 sm:px-6">
         <h1 className="text-[1.75rem]">This study page could not be loaded</h1>
         <p className="mt-2 t-graphite">{error}</p>
+        <button onClick={() => setReload(n => n + 1)} className="btn btn-primary mt-6 mr-3">Retry</button>
         <Link href="/study" className="btn btn-outline mt-6">All topics</Link>
       </div>
     );
@@ -183,6 +192,8 @@ export default function StudyTopicPage() {
               <h2 id="chosen-h" className="text-lg">Chosen for you</h2>
               <p className="text-sm t-graphite t-num" aria-live="polite">{chosenDone} of {page.chosen.length} done</p>
             </div>
+            <progress className="mt-3 h-2 w-full accent-[var(--ink)]" value={chosenDone} max={page.chosen.length} aria-label="Recommended resources completed" />
+            {chosenDone === page.chosen.length && <p className="mt-2 text-sm t-pass" role="status">Recommended resources complete. Take the topic quiz to update your learning path.</p>}
             <div className="mt-4"><ResourceGroups list={page.chosen} busy={busy} onToggle={toggle} /></div>
           </section>
         )}
