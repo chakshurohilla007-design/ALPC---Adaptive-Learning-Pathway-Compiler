@@ -6,6 +6,7 @@ const Attempt = require('../models/Attempt');
 const Recommendation = require('../models/Recommendation');
 const CompilerDecision = require('../models/CompilerDecision');
 const StudyProgress = require('../models/StudyProgress');
+const TheoryAttempt = require('../models/TheoryAttempt');
 const Pathway = require('../models/Pathway');
 const { signToken, authMiddleware } = require('../middleware/auth');
 
@@ -113,6 +114,7 @@ router.delete('/account', authMiddleware, async (req, res) => {
       ['recommendations', Recommendation, { userId }],
       ['decisions', CompilerDecision, { userId }],
       ['studyProgress', StudyProgress, { userId }],
+      ['theoryAttempts', TheoryAttempt, { userId }],
       ['pathways', Pathway, { createdBy: userId }],
     ]) {
       removed[name] = (await Model.deleteMany(filter)).deletedCount;

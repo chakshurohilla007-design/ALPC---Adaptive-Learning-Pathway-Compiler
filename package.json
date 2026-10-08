@@ -4,13 +4,14 @@
   "private": true,
   "description": "ALPC \u2014 Adaptive Learning Pathway Compiler + LearnSmart AI Intelligent Platform",
   "scripts": {
+    "test:theory": "node --test backend/src/tests/theory.test.js",
     "seed": "npm run seed --prefix backend",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:ml": "cd ml-service && .\\venv\\Scripts\\uvicorn app.main:app --reload --port 8000",
     "setup:ml": "cd ml-service && python -m venv venv && .\\venv\\Scripts\\pip install -r requirements.txt",
     "test": "npm run test:integration",
-    "test:integration": "node backend/src/tests/alpc.integration.test.js && node backend/src/tests/study.test.js && node backend/src/tests/features.test.js && node --test backend/src/tests/hosting.test.js",
+    "test:integration": "node --test backend/src/tests/theory.test.js && node backend/src/tests/alpc.integration.test.js && node backend/src/tests/study.test.js && node backend/src/tests/features.test.js && node --test backend/src/tests/hosting.test.js",
     "build:compiler": "cmd /c build.bat",
     "demo:compiler": "cmd /c demo.bat",
     "build:frontend": "npm run build --prefix frontend"

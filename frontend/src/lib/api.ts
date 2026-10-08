@@ -64,6 +64,10 @@ export class BackendUnavailableError extends Error {
 }
 
 export const api = {
+  getTheoryQuestions: () => request<{ questions: TheoryQuestion[] }>('/api/theory/questions'),
+  getTheoryAttempts: () => request<{ attempts: TheoryAttempt[] }>('/api/theory/attempts'),
+  submitTheory: (body: { questionId: string; marks: number; answer: string; textConfirmed: boolean }) =>
+    request<TheoryResult>('/api/theory/submit', { method: 'POST', body: JSON.stringify(body) }),
   register: (body: { name: string; email: string; password: string }) =>
     request<{ token: string; user: ReturnType<typeof getUser> }>('/api/auth/register', {
       method: 'POST',
@@ -178,6 +182,17 @@ export const api = {
       { method: 'POST', body: JSON.stringify(studentData) }
     ),
 };
+
+export interface TheoryQuestion { id: string; skill: string; prompt: string }
+export interface TheoryResult {
+  score: number; maxMarks: number; status: 'estimated'; masteryUpdated: false;
+  feedback: { label: string; marks: number; maxMarks: number; detected: boolean; guidance: string }[];
+  modelAnswer: string; attemptId: string; skill: string;
+}
+export interface TheoryAttempt {
+  _id: string; skill: string; questionId: string; answer: string; score: number; maxMarks: number;
+  createdAt: string; feedback: TheoryResult['feedback']; status: 'estimated';
+}
 
 export interface QuizQuestion {
   id: string;

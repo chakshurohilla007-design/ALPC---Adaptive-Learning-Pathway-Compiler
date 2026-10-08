@@ -11,6 +11,7 @@ const WHAT_GOES = [
   'every quiz answer and your mastery in each topic',
   'compiler decisions and the notes on your answers',
   'study progress and the pathways you built',
+  'written answers and their estimated rubric marks',
 ];
 
 export default function AccountPage() {

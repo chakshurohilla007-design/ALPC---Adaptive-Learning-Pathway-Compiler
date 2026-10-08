@@ -34,6 +34,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api/alpc', alpcRoutes);
 app.use('/api/study', studyRoutes);
+app.use('/api/theory', require('./routes/theory'));
 
 app.use((err, _req, res, _next) => {
   console.error(err);

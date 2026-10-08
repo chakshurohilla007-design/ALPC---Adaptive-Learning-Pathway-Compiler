@@ -65,6 +65,12 @@ docs/           architecture, API, demo script, decision records
 
 ## Deploy online
 
+Written-answer practice is available at `/theory`: 5- and 10-mark questions,
+typed answers or browser OCR, editable extracted text, estimated rubric marks,
+model answers, and saved attempts. See [docs/THEORY.md](docs/THEORY.md) for the
+supported topics and grading limits. Estimated theory marks are kept separate
+from quiz mastery.
+
 Follow [docs/DEPLOY.md](docs/DEPLOY.md) for MongoDB Atlas, the two Render services,
 and the Vercel frontend. The root Dockerfile includes the compiler and LLVM; do
 not deploy the legacy backend-only Dockerfile.

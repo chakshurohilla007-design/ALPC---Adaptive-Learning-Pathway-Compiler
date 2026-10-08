@@ -13,6 +13,7 @@ const GROUPS = [
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/study', label: 'Study' },
       { href: '/quiz/adaptive', label: 'Practice quiz' },
+      { href: '/theory', label: 'Written answers' },
       { href: '/quiz/diagnostic', label: 'Diagnostic' },
       { href: '/history', label: 'Decision history' },
     ],

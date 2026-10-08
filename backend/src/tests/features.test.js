@@ -144,7 +144,7 @@ async function main() {
   const models = {
     User: require('../models/User'), Attempt: require('../models/Attempt'), Mastery: require('../models/Mastery'),
     Recommendation: require('../models/Recommendation'), CompilerDecision: require('../models/CompilerDecision'),
-    StudyProgress: require('../models/StudyProgress'), Pathway: require('../models/Pathway'),
+    StudyProgress: require('../models/StudyProgress'), Pathway: require('../models/Pathway'), TheoryAttempt: require('../models/TheoryAttempt'),
   };
   const userId = '64b000000000000000000002';
   const hash = await bcrypt.hash('correct horse', 4);
@@ -152,7 +152,7 @@ async function main() {
   const deletedFrom = [];
   models.User.findById = async () => (userGone ? null : { _id: userId, passwordHash: hash });
   models.User.deleteOne = async () => { userGone = true; return { deletedCount: 1 }; };
-  for (const name of ['Attempt', 'Mastery', 'Recommendation', 'CompilerDecision', 'StudyProgress', 'Pathway']) {
+  for (const name of ['Attempt', 'Mastery', 'Recommendation', 'CompilerDecision', 'StudyProgress', 'Pathway', 'TheoryAttempt']) {
     models[name].deleteMany = async filter => { deletedFrom.push([name, filter]); return { deletedCount: 2 }; };
   }
   const app = express();
@@ -175,7 +175,7 @@ async function main() {
       assert.strictEqual(r.status, 200, JSON.stringify(r.body));
       assert.strictEqual(userGone, true);
       assert.deepStrictEqual(deletedFrom.map(([n]) => n).sort(),
-        ['Attempt', 'CompilerDecision', 'Mastery', 'Pathway', 'Recommendation', 'StudyProgress']);
+        ['Attempt', 'CompilerDecision', 'Mastery', 'Pathway', 'Recommendation', 'StudyProgress', 'TheoryAttempt']);
       assert(deletedFrom.every(([n, f]) => String(n === 'Pathway' ? f.createdBy : f.userId) === userId));
     });
 
