@@ -66,7 +66,10 @@ export class BackendUnavailableError extends Error {
 export const api = {
   getTheoryQuestions: () => request<{ questions: TheoryQuestion[] }>('/api/theory/questions'),
   getTheoryAttempts: () => request<{ attempts: TheoryAttempt[] }>('/api/theory/attempts'),
-  submitTheory: (body: { questionId: string; marks: number; answer: string; textConfirmed: boolean }) =>
+  getTheoryReviewers: () => request<{ reviewers: { name: string; email: string }[]; canReview: boolean }>('/api/theory/reviewers'),
+  getTheoryReviews: () => request<{ attempts: (TheoryAttempt & { userId: { _id: string; name: string }; prompt: string })[] }>('/api/theory/reviews'),
+  confirmTheoryReview: (id: string, score: number, comment: string) => request<{ confirmed: true; mastery: number }>(`/api/theory/reviews/${id}/confirm`, { method: 'POST', body: JSON.stringify({ score, comment }) }),
+  submitTheory: (body: { questionId: string; marks: number; answer: string; textConfirmed: boolean; reviewerEmail?: string }) =>
     request<TheoryResult>('/api/theory/submit', { method: 'POST', body: JSON.stringify(body) }),
   register: (body: { name: string; email: string; password: string }) =>
     request<{ token: string; user: ReturnType<typeof getUser> }>('/api/auth/register', {
@@ -185,13 +188,14 @@ export const api = {
 
 export interface TheoryQuestion { id: string; skill: string; prompt: string }
 export interface TheoryResult {
-  score: number; maxMarks: number; status: 'estimated'; masteryUpdated: false;
+  score: number; maxMarks: number; status: 'estimated' | 'pending'; masteryUpdated: false;
   feedback: { label: string; marks: number; maxMarks: number; detected: boolean; guidance: string }[];
   modelAnswer: string; attemptId: string; skill: string;
 }
 export interface TheoryAttempt {
   _id: string; skill: string; questionId: string; answer: string; score: number; maxMarks: number;
-  createdAt: string; feedback: TheoryResult['feedback']; status: 'estimated';
+  createdAt: string; feedback: TheoryResult['feedback']; status: 'estimated' | 'pending' | 'confirmed';
+  confirmedScore?: number; reviewComment?: string; masteryApplied?: boolean; reviewerEmail?: string;
 }
 
 export interface QuizQuestion {

@@ -28,6 +28,16 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-24.04
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Install Flex, Bison and LLVM
@@ -45,6 +55,7 @@ jobs:
           ALPC_BIN: ${{ github.workspace }}/alpc
           LLI_BIN: lli
           OPT_BIN: opt
+          THEORY_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/alpc_theory_ci
 
   frontend:
     name: Frontend build

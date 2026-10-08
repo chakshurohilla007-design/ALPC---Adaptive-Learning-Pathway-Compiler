@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <ul>
         <li><strong>Your account:</strong> name, email address, and a bcrypt hash of your password. The password itself is never stored.</li>
         <li><strong>Quiz answers:</strong> for each question you answer, the option you picked, whether it was correct, the topic, and the time.</li>
-        <li><strong>Written answers:</strong> submitted text, topic, estimated marks, rubric feedback, and submission time. Answer images are processed in your browser and are not uploaded or stored by the backend.</li>
+        <li><strong>Written answers:</strong> submitted text, topic, estimated marks, rubric feedback, and submission time. If you select a teacher, that teacher can read your answer and save confirmed marks and feedback. Confirmed marks update mastery. Answer images are processed in your browser and are not uploaded or stored by the backend.</li>
         <li><strong>Mastery estimates:</strong> one score between 0 and 1 per topic, updated after each answer.</li>
         <li><strong>Recommendations:</strong> the study suggestions generated for you.</li>
         <li><strong>Compiler decisions:</strong> the Path-Lang program generated for you, the outcome it reached, the alignment score, and the output of each compiler stage.</li>

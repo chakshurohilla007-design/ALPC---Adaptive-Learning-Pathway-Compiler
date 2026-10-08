@@ -22,9 +22,13 @@ export default function TheoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [historyError, setHistoryError] = useState('');
+  const [reviewerError, setReviewerError] = useState('');
   const [result, setResult] = useState<TheoryResult | null>(null);
   const [attempts, setAttempts] = useState<TheoryAttempt[]>([]);
   const [reload, setReload] = useState(0);
+  const [reviewers, setReviewers] = useState<{ name: string; email: string }[]>([]);
+  const [reviewerEmail, setReviewerEmail] = useState('');
+  const [canReview, setCanReview] = useState(false);
   const worker = useRef<Worker | null>(null);
   const mounted = useRef(false);
   const question = questions.find(q => q.id === questionId);
@@ -40,10 +44,12 @@ export default function TheoryPage() {
     setLoading(true);
     setError('');
     api.getTheoryQuestions().then(r => {
-      if (active) { setQuestions(r.questions); setQuestionId(r.questions[0]?.id || ''); }
+      if (active) { setQuestions(r.questions); setQuestionId(current => current || r.questions[0]?.id || ''); }
     }).catch(err => { if (active) setError(err.message); }).finally(() => { if (active) setLoading(false); });
     api.getTheoryAttempts().then(r => { if (active) { setAttempts(r.attempts); setHistoryError(''); } })
       .catch(() => { if (active) setHistoryError('Previous answers could not be loaded.'); });
+    api.getTheoryReviewers().then(r => { if (active) { setReviewers(r.reviewers); setCanReview(r.canReview); setReviewerError(''); } })
+      .catch(() => { if (active) setReviewerError('Teacher availability could not be loaded. Refresh reviews to retry.'); });
     return () => { active = false; };
   }, [router, reload]);
 
@@ -91,7 +97,7 @@ export default function TheoryPage() {
     if (busy || ocrBusy || !confirmed || !question) return;
     setBusy(true); setError(''); setResult(null);
     try {
-      const r = await api.submitTheory({ questionId, marks, answer, textConfirmed: confirmed });
+      const r = await api.submitTheory({ questionId, marks, answer, textConfirmed: confirmed, reviewerEmail });
       if (!mounted.current) return;
       setResult(r);
       setAttempts(prev => [{ _id: r.attemptId, questionId, skill: r.skill, answer, score: r.score, maxMarks: r.maxMarks, status: r.status, feedback: r.feedback, createdAt: new Date().toISOString() }, ...prev].slice(0, 20));
@@ -100,7 +106,7 @@ export default function TheoryPage() {
   }
 
   return <div className="mx-auto max-w-[52rem] px-4 py-8 sm:px-6">
-    <header className="pb-6"><h1 className="text-[1.75rem]">Written answers</h1><p className="mt-2 text-sm t-graphite">5- and 10-mark theory practice. Type an answer or extract text from a photo.</p></header>
+    <header className="pb-6"><h1 className="text-[1.75rem]">Written answers</h1><p className="mt-2 text-sm t-graphite">5- and 10-mark theory practice. Type an answer or extract text from a photo.</p>{canReview && <Link href="/theory/review" className="link mt-3 inline-block">Teacher review queue</Link>}</header>
     {error && <p className="notice notice-error mb-4" role="alert">{error}</p>}
     {loading ? <p role="status">Loading questions...</p> : questions.length === 0 ? <button className="btn btn-outline" onClick={() => setReload(n => n + 1)}>Reload questions</button> : <form onSubmit={submit} className="space-y-6">
       <div className="flex flex-wrap gap-4">
@@ -123,20 +129,22 @@ export default function TheoryPage() {
       </section>
       <div><label htmlFor="theory-answer" className="font-medium">Your answer</label><textarea id="theory-answer" rows={12} minLength={20} maxLength={12000} required disabled={busy || ocrBusy} value={answer} onChange={e => { setAnswer(e.target.value); setConfirmed(false); setResult(null); }} className="mt-2 block w-full resize-y border border-[var(--rule-soft)] bg-transparent p-3" /><p className="mt-1 text-sm t-graphite">{answer.length} / 12,000 characters</p></div>
       <label className="flex items-start gap-2 text-sm"><input className="mt-1" type="checkbox" checked={confirmed} disabled={busy || ocrBusy} onChange={e => setConfirmed(e.target.checked)} />I checked that this text matches my intended answer.</label>
-      <p className="text-sm t-graphite">Marks are estimated from detected rubric terms. Wording, reasoning, and contradictions need human review. These practice marks do not change quiz mastery.</p>
+      <label className="block text-sm">Teacher review<select value={reviewerEmail} disabled={busy || ocrBusy} onChange={e => setReviewerEmail(e.target.value)} className="mt-2 block max-w-full border border-[var(--rule-soft)] bg-transparent p-2"><option value="">Practice estimate only</option>{reviewers.map(r => <option key={r.email} value={r.email}>{r.name} ({r.email})</option>)}</select></label>
+      {reviewerError && <p className="text-sm" role="alert">{reviewerError}</p>}
+      <p className="text-sm t-graphite">Automatic marks are estimates. {reviewerEmail ? 'Submitting shares your answer text with the selected teacher. Only teacher-confirmed marks update mastery.' : 'Choose a teacher for confirmed marks, or keep this as practice. Estimates do not change mastery.'}</p>
       <button type="submit" className="btn btn-primary" disabled={busy || ocrBusy || !confirmed || answer.trim().length < 20}>{busy ? 'Saving assessment...' : 'Assess answer'}</button>
     </form>}
     {result && <section className="mt-10 border-t border-[var(--rule-soft)] pt-6" aria-labelledby="feedback-heading">
       <h2 id="feedback-heading" className="text-xl">Estimated marks: {result.score} / {result.maxMarks}</h2>
-      <p className="mt-2 text-sm t-graphite">Saved as a practice estimate. Detected terms are not proof that an explanation is correct.</p>
+      <p className="mt-2 text-sm t-graphite">{result.status === 'pending' ? 'Sent to your teacher for review. ' : 'Saved as a practice estimate. '}Detected terms are not proof that an explanation is correct.</p>
       <ul className="mt-4 divide-y divide-[var(--rule-soft)]">{result.feedback.map(f => <li key={f.label} className="py-3"><p className="font-medium">{f.label} <span className="t-num">{f.marks}/{f.maxMarks}</span></p><p className="text-sm t-graphite">{f.detected ? 'Rubric term detected.' : 'Rubric term not detected; check whether you explained this differently.'} {f.guidance}</p></li>)}</ul>
       <details className="mt-4"><summary className="cursor-pointer font-medium">Model answer</summary><p className="mt-3">{result.modelAnswer}</p></details>
       <Link className="btn btn-outline btn-sm mt-5" href={`/study/${encodeURIComponent(result.skill)}`}>Study {result.skill}</Link>
     </section>}
-    <section className="mt-10 border-t border-[var(--rule-soft)] pt-6"><h2 className="text-lg">Previous written answers</h2>
+    <section className="mt-10 border-t border-[var(--rule-soft)] pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg">Previous written answers</h2><button className="link text-sm" disabled={busy || ocrBusy} onClick={() => setReload(n => n + 1)}>Refresh reviews</button></div>
       {historyError && <p className="mt-2 text-sm" role="alert">{historyError} <button className="link" onClick={() => setReload(n => n + 1)}>Retry</button></p>}
       {!loading && !historyError && attempts.length === 0 && <p className="mt-2 text-sm t-graphite">Your submitted answers will appear here.</p>}
-      <ul className="mt-3 divide-y divide-[var(--rule-soft)]">{attempts.map(a => <li key={a._id} className="py-3"><details><summary className="cursor-pointer">{a.skill}: {a.score}/{a.maxMarks} estimated · {new Date(a.createdAt).toLocaleString()}</summary><p className="mt-3 whitespace-pre-wrap text-sm">{a.answer}</p><ul className="mt-3 space-y-2 text-sm">{a.feedback.map(f => <li key={f.label}>{f.label}: {f.marks}/{f.maxMarks}. {f.guidance}</li>)}</ul></details></li>)}</ul>
+      <ul className="mt-3 divide-y divide-[var(--rule-soft)]">{attempts.map(a => <li key={a._id} className="py-3"><details><summary className="cursor-pointer">{a.skill}: {a.status === 'confirmed' ? a.confirmedScore : a.score}/{a.maxMarks} {a.status === 'confirmed' ? 'teacher confirmed' : a.status === 'pending' ? 'estimated, awaiting review' : 'estimated'} · {new Date(a.createdAt).toLocaleString()}</summary>{a.reviewComment && <p className="mt-3 text-sm">Teacher feedback: {a.reviewComment}</p>}{a.status === 'confirmed' && <p className="mt-2 text-sm">{a.masteryApplied ? 'Mastery updated. ' : 'Mastery update awaiting completion. '}<Link className="link" href={`/study/${encodeURIComponent(a.skill)}`}>Open updated learning path</Link></p>}<p className="mt-3 whitespace-pre-wrap text-sm">{a.answer}</p><ul className="mt-3 space-y-2 text-sm">{a.feedback.map(f => <li key={f.label}>{f.label}: {f.marks}/{f.maxMarks}. {f.guidance}</li>)}</ul></details></li>)}</ul>
     </section>
   </div>;
 }

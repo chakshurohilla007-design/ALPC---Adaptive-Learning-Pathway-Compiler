@@ -6,6 +6,8 @@ const express = require('express');
 const { questions, findQuestion, grade } = require('../services/theory');
 const TheoryAttempt = require('../models/TheoryAttempt');
 const { signToken } = require('../middleware/auth');
+const User = require('../models/User');
+const review = require('../services/theoryReview');
 
 test('every rubric totals exactly 5 or 10 marks', () => {
   for (const q of questions) for (const marks of [5, 10]) {
@@ -15,6 +17,50 @@ test('every rubric totals exactly 5 or 10 marks', () => {
   }
   assert.equal(findQuestion('missing', 5), null);
   assert.equal(findQuestion('arrays', '5'), null);
+});
+
+test('teacher authorization uses live account identity and confirmation retries preserve marks', async () => {
+  const savedEnv = process.env.THEORY_REVIEWER_EMAILS;
+  process.env.THEORY_REVIEWER_EMAILS = 'teacher@example.com';
+  const originals = { user: User.findById, find: TheoryAttempt.findOne, change: TheoryAttempt.findOneAndUpdate, update: TheoryAttempt.updateOne, apply: review.applyConfirmedMark };
+  const teacherId = '507f1f77bcf86cd799439012';
+  const studentId = '507f1f77bcf86cd799439011';
+  const teacher = { _id: teacherId, email: 'teacher@example.com' };
+  const student = { _id: studentId, email: 'student@example.com' };
+  const attempt = { _id: '507f1f77bcf86cd799439013', userId: studentId, reviewerEmail: teacher.email, status: 'pending', maxMarks: 5, skill: 'Stacks' };
+  let applyCalls = 0;
+  let fail = true;
+  User.findById = async id => String(id) === teacherId ? teacher : student;
+  TheoryAttempt.findOne = async filter => filter.reviewerEmail === attempt.reviewerEmail ? { ...attempt } : null;
+  TheoryAttempt.findOneAndUpdate = async (_filter, update) => { Object.assign(attempt, update.$set); return { ...attempt }; };
+  TheoryAttempt.updateOne = async (_filter, update) => { Object.assign(attempt, update.$set); };
+  review.applyConfirmedMark = async () => { applyCalls++; if (fail) { fail = false; throw new Error('Temporary outage'); } return 0.42; };
+  const app = express(); app.use(express.json()); app.use('/api/theory', require('../routes/theory'));
+  const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/api/theory/reviews/${attempt._id}/confirm`;
+  async function send(user, body) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${signToken({ ...user, name: 'Test' })}` }, body: JSON.stringify(body) }); }
+  try {
+    assert.equal((await send({ ...student, email: teacher.email }, { score: 5, comment: 'Looks correct.' })).status, 403, 'spoofed token email is ignored');
+    assert.equal((await send(teacher, { score: 6, comment: 'Too many marks.' })).status, 400);
+    assert.equal((await send(teacher, { score: 2.25, comment: 'Invalid fraction.' })).status, 400);
+    attempt.reviewerEmail = 'someoneelse@example.com';
+    assert.equal((await send(teacher, { score: 3.5, comment: 'Partial understanding.' })).status, 404);
+    attempt.reviewerEmail = teacher.email;
+    const body = { score: 3.5, comment: 'Partial understanding.' };
+    assert.equal((await send(teacher, body)).status, 503);
+    assert.equal(attempt.status, 'confirmed');
+    assert.equal(attempt.confirmedScore, 3.5);
+    assert.equal((await send(teacher, { ...body, score: 5 })).status, 409);
+    assert.equal((await send(teacher, body)).status, 200);
+    assert.equal(attempt.masteryApplied, true);
+    assert.equal(applyCalls, 2);
+    process.env.THEORY_REVIEWER_EMAILS = '';
+    assert.equal((await send(teacher, body)).status, 403, 'removing teacher access takes effect immediately');
+  } finally {
+    if (savedEnv === undefined) delete process.env.THEORY_REVIEWER_EMAILS; else process.env.THEORY_REVIEWER_EMAILS = savedEnv;
+    User.findById = originals.user; TheoryAttempt.findOne = originals.find; TheoryAttempt.findOneAndUpdate = originals.change; TheoryAttempt.updateOne = originals.update; review.applyConfirmedMark = originals.apply;
+    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+  }
 });
 
 test('empty, unrelated, repeated, substring and negated terms do not inflate marks', () => {

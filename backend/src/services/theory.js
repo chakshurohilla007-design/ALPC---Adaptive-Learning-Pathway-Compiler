@@ -54,6 +54,85 @@ const questions = [
   },
 ];
 
+const additionalTopics = [
+  ['strings', 'Strings', 'Explain strings, common operations, and the costs of comparison and pattern search.', [
+    ['Character sequence', ['character', 'characters'], 'A string is a sequence of characters.'],
+    ['Length', ['length'], 'Length is the number of characters under the representation used.'],
+    ['Indexing', ['index', 'indices'], 'Indexing accesses a character at a position.'],
+    ['Concatenation', ['concatenation', 'concatenate'], 'Concatenation joins strings and may allocate and copy characters.'],
+    ['Substring', ['substring'], 'A substring is a contiguous part of a string.'],
+    ['Comparison', ['comparison', 'compare'], 'Lexicographic comparison examines corresponding characters until they differ.'],
+    ['Linear comparison cost', ['o(n)', 'linear'], 'Comparison may inspect every character and takes linear time in the common-prefix length.'],
+    ['Naive search', ['naive', 'brute force'], 'Naive pattern search checks the pattern at each possible start position.'],
+    ['Efficient matching', ['kmp', 'prefix function'], 'KMP uses prefix information to avoid repeating comparisons.'],
+    ['Example', ['example'], 'Trace a comparison or pattern search on a concrete string.'],
+  ]],
+  ['linked-lists', 'Linked Lists', 'Explain linked lists, their operations, and their trade-offs compared with arrays.', [
+    ['Nodes', ['node', 'nodes'], 'Each node stores data and a link to another node.'],
+    ['Head', ['head'], 'The head refers to the first node.'],
+    ['Links', ['pointer', 'reference', 'link'], 'Links connect nodes without requiring contiguous storage.'],
+    ['Traversal', ['traversal', 'traverse'], 'Follow links from the head to visit nodes.'],
+    ['Insertion', ['insert', 'insertion'], 'Insert a node by updating links.'],
+    ['Deletion', ['delete', 'deletion'], 'Delete a node by reconnecting the surrounding links.'],
+    ['Search complexity', ['o(n)', 'linear'], 'Searching or indexed access requires O(n) traversal in the worst case.'],
+    ['Known-position update', ['o(1)', 'constant time'], 'Insertion after a known node takes O(1); locating that node may take O(n).'],
+    ['Extra storage', ['memory', 'overhead'], 'Links add memory overhead compared with array storage.'],
+    ['Doubly linked lists', ['doubly', 'previous'], 'Doubly linked lists include previous and next links.'],
+  ]],
+  ['queues', 'Queues', 'Explain queues, enqueue and dequeue, and a circular-array implementation.', [
+    ['FIFO', ['fifo', 'first in first out', 'first-in-first-out'], 'The first inserted item is removed first.'],
+    ['Enqueue', ['enqueue'], 'Enqueue adds an item at the rear.'],
+    ['Dequeue', ['dequeue'], 'Dequeue removes an item from the front.'],
+    ['Front and rear', ['front', 'rear'], 'Track the front and rear positions.'],
+    ['Implementation', ['array', 'linked list'], 'Queues can use arrays or linked lists.'],
+    ['Circular storage', ['circular', 'wrap'], 'A circular queue reuses positions by wrapping around the array.'],
+    ['Modulo arithmetic', ['modulo', '%'], 'Advance indices modulo capacity.'],
+    ['Complexity', ['o(1)', 'constant time'], 'A circular queue supports enqueue and dequeue in O(1).'],
+    ['Empty/full conditions', ['empty', 'full'], 'Use a count or reserved slot to distinguish full and empty states.'],
+    ['Application', ['scheduling', 'bfs', 'breadth first'], 'Applications include scheduling and breadth-first search.'],
+  ]],
+  ['trees', 'Trees', 'Explain binary trees, binary search trees, traversal orders, and search complexity.', [
+    ['Hierarchy', ['hierarchy', 'hierarchical'], 'A tree organizes nodes in a hierarchy.'],
+    ['Root', ['root'], 'The root is the top node and has no parent.'],
+    ['Children', ['child', 'children'], 'Each binary-tree node has at most two children.'],
+    ['Leaves', ['leaf', 'leaves'], 'Leaves have no children.'],
+    ['BST ordering', ['left', 'smaller'], 'A binary search tree orders smaller keys to the left and larger keys to the right, with a specified duplicate policy.'],
+    ['Inorder', ['inorder', 'in-order'], 'Inorder visits the left subtree, root, then right subtree.'],
+    ['Preorder', ['preorder', 'pre-order'], 'Preorder visits root before its subtrees.'],
+    ['Postorder', ['postorder', 'post-order'], 'Postorder visits the root after its subtrees.'],
+    ['Balanced search', ['o(log n)', 'balanced'], 'A balanced BST searches in O(log n) time.'],
+    ['Skewed search', ['o(n)', 'skewed'], 'A skewed BST can require O(n) time for search.'],
+  ]],
+  ['graphs', 'Graphs', 'Explain graph representations, breadth-first search, depth-first search, and their complexity.', [
+    ['Vertices', ['vertex', 'vertices', 'nodes'], 'Vertices represent entities in a graph.'],
+    ['Edges', ['edge', 'edges'], 'Edges connect pairs of vertices.'],
+    ['Adjacency list', ['adjacency list'], 'An adjacency list stores each vertex\'s neighbors.'],
+    ['Adjacency matrix', ['adjacency matrix'], 'An adjacency matrix records edges in a V by V table.'],
+    ['Directed graphs', ['directed', 'undirected'], 'Directed edges have an orientation; undirected edges connect both ways.'],
+    ['BFS', ['bfs', 'breadth-first', 'breadth first'], 'BFS explores vertices by distance from its start using a queue.'],
+    ['DFS', ['dfs', 'depth-first', 'depth first'], 'DFS explores a branch before backtracking using recursion or a stack.'],
+    ['Visited set', ['visited'], 'Track visited vertices to avoid processing cycles repeatedly.'],
+    ['Traversal complexity', ['o(v+e)', 'o(v + e)'], 'With adjacency lists, BFS and DFS run in O(V + E).'],
+    ['Application', ['shortest path', 'connectivity'], 'BFS finds shortest paths by edge count in an unweighted graph; traversals also test connectivity.'],
+  ]],
+  ['dynamic-programming', 'Dynamic Programming', 'Explain dynamic programming, its prerequisites, and memoization versus tabulation with an example.', [
+    ['Subproblems', ['subproblem', 'subproblems'], 'Break the problem into smaller subproblems.'],
+    ['Overlap', ['overlapping', 'repeated'], 'Dynamic programming is useful when subproblems repeat.'],
+    ['Optimal substructure', ['optimal substructure'], 'For optimization problems, optimal substructure lets optimal subsolutions build an optimal solution.'],
+    ['Store results', ['store', 'cache'], 'Store computed results to avoid recomputation.'],
+    ['Recurrence', ['recurrence', 'transition'], 'Define a recurrence or state transition.'],
+    ['Memoization', ['memoization', 'top-down'], 'Memoization computes states on demand using a cache.'],
+    ['Tabulation', ['tabulation', 'bottom-up'], 'Tabulation fills a table in dependency order.'],
+    ['Base case', ['base case', 'base cases'], 'Initialize base cases before using the recurrence.'],
+    ['Complexity', ['states', 'transitions'], 'Time depends on the number of states and work per transition; space depends on stored states.'],
+    ['Example', ['fibonacci', 'knapsack'], 'Illustrate the recurrence and stored states using Fibonacci or knapsack.'],
+  ]],
+];
+for (const [id, skill, prompt, rows] of additionalTopics) {
+  const rubric = rows.map(([label, terms, guidance]) => ({ label, terms, guidance }));
+  questions.push({ id, skill, prompt, criteria: rubric.slice(0, 5), extension: rubric.slice(5) });
+}
+
 function findQuestion(id, marks) {
   const question = questions.find(q => q.id === id);
   if (!question || ![5, 10].includes(marks)) return null;

@@ -5,6 +5,7 @@ const masterySchema = new mongoose.Schema({
   skill: { type: String, required: true },
   masteryScore: { type: Number, default: 0.3, min: 0, max: 1 },
   updatedAt: { type: Date, default: Date.now },
+  appliedTheoryAttempts: { type: [String], default: [] },
 });
 
 masterySchema.index({ userId: 1, skill: 1 }, { unique: true });

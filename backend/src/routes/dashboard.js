@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Mastery = require('../models/Mastery');
 const Attempt = require('../models/Attempt');
+const TheoryAttempt = require('../models/TheoryAttempt');
 const Recommendation = require('../models/Recommendation');
 const { authMiddleware } = require('../middleware/auth');
 const mlService = require('../services/mlService');
@@ -38,7 +39,13 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
       { $match: { userId: new mongoose.Types.ObjectId(req.user.id) } },
       { $group: { _id: '$skill', at: { $max: '$timestamp' } } },
     ]);
-    const review = dueForReview(masteryRecords, Object.fromEntries(last.map(l => [l._id, l.at])));
+    const lastTheory = await TheoryAttempt.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(req.user.id), status: 'confirmed', masteryApplied: true } },
+      { $group: { _id: '$skill', at: { $max: '$reviewedAt' } } },
+    ]);
+    const lastPracticed = Object.fromEntries(last.map(l => [l._id, l.at]));
+    for (const row of lastTheory) if (!lastPracticed[row._id] || row.at > lastPracticed[row._id]) lastPracticed[row._id] = row.at;
+    const review = dueForReview(masteryRecords, lastPracticed);
 
     res.json({
       skills,
