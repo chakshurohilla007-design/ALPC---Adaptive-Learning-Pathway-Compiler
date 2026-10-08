@@ -14,17 +14,23 @@ export default function DecisionPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<{ decision: Decision; content: AlpcContent | null } | null>(null);
   const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     if (!getToken()) { router.push('/login'); return; }
-    api.getAlpcDecision(id).then(setData).catch(err => setError(err.message));
-  }, [id, router]);
+    let active = true;
+    setError('');
+    setData(null);
+    api.getAlpcDecision(id).then(result => { if (active) setData(result); }).catch(err => { if (active) setError(err.message); });
+    return () => { active = false; };
+  }, [id, router, reload]);
 
   if (error) {
     return (
       <div className="mx-auto max-w-[60rem] px-4 py-16 sm:px-6">
         <h1 className="text-[1.75rem]">This decision could not be loaded</h1>
         <p className="mt-2 t-graphite">{error}</p>
+        <button onClick={() => setReload(n => n + 1)} className="btn btn-primary mt-6 mr-3">Retry</button>
         <Link href="/history" className="btn btn-outline mt-6">Back to decision history</Link>
       </div>
     );
@@ -103,6 +109,7 @@ export default function DecisionPage() {
           )}
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href={`/study/${encodeURIComponent(d.skill)}`} className="btn btn-primary">Study {d.skill}</Link>
+            <Link href={`/quiz/adaptive?skill=${encodeURIComponent(d.skill)}`} className="btn btn-outline">Practise {d.skill}</Link>
             <Link href="/compiler" className="btn btn-outline">Try the program in the playground</Link>
           </div>
         </li>
